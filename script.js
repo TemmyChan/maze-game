@@ -1,37 +1,34 @@
-const socket = new WebSocket("wss://maze-game-server.onrender.com:10000");
+let socket;
 
-const playerId = Math.random().toString(36).substr(2, 9);
-let players = {};
-let player = { x: 1, y: 1 };
+function connect() {
+    socket = new WebSocket("wss://maze-game-server.onrender.com:10000");
 
-socket.addEventListener("message", (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === "update") {
-        players = data.players;
-        draw();
-    }
-});
+    socket.addEventListener("open", () => {
+        console.log("WebSocket接続成功");
+    });
 
-function movePlayer(dx, dy) {
-    player.x += dx;
-    player.y += dy;
-    socket.send(JSON.stringify({ type: "move", id: playerId, x: player.x, y: player.y }));
-}
+    socket.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "update") {
+            players = data.players;
+            draw();
+        }
+    });
 
-document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowUp") movePlayer(0, -1);
-    if (event.key === "ArrowDown") movePlayer(0, 1);
-    if (event.key === "ArrowLeft") movePlayer(-1, 0);
-    if (event.key === "ArrowRight") movePlayer(1, 0);
-});
+    socket.addEventListener("close", () => {
+        console.log("WebSocket接続が閉じられました");
+    });
 
-function draw() {
-    const canvas = document.getElementById("maze");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    Object.values(players).forEach(p => {
-        ctx.fillStyle = p === player ? "blue" : "red";
-        ctx.fillRect(p.x * 20, p.y * 20, 20, 20);
+    socket.addEventListener("error", (error) => {
+        console.log("WebSocketエラー:", error);
     });
 }
+
+// 最初に接続
+connect();
+
+// もし接続が切断された場合に再接続
+socket.addEventListener("close", () => {
+    console.log("接続が切断されたため再接続します...");
+    connect();
+});
