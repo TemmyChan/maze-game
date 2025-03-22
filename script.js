@@ -1,4 +1,4 @@
-const socket = new WebSocket("wss://maze-game-server.onrender.com");
+const socket = new WebSocket("wss://maze-game-server.onrender.com:10000");
 
 const playerId = Math.random().toString(36).substr(2, 9);
 let players = {};
