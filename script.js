@@ -1,34 +1,38 @@
-let socket;
+const WebSocket = require("ws");
 
-function connect() {
-    socket = new WebSocket("wss://maze-game-server.onrender.com:10000");
+const port = 10000; // Render の `Background Worker` では PORT 環境変数を使用しない
+const wss = new WebSocket.Server({ port });
 
-    socket.addEventListener("open", () => {
-        console.log("WebSocket接続成功");
-    });
+let players = {};
 
-    socket.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === "update") {
-            players = data.players;
-            draw();
+wss.on("connection", (ws) => {
+    console.log("新しいプレイヤーが接続");
+
+    ws.on("message", (data) => {
+        try {
+            const message = JSON.parse(data);
+
+            if (message.type === "move") {
+                players[message.id] = { x: message.x, y: message.y };
+
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({ type: "update", players }));
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("メッセージ解析エラー:", error);
         }
     });
 
-    socket.addEventListener("close", () => {
-        console.log("WebSocket接続が閉じられました");
+    ws.on("close", () => {
+        console.log("プレイヤーが退出");
     });
 
-    socket.addEventListener("error", (error) => {
-        console.log("WebSocketエラー:", error);
+    ws.on("error", (err) => {
+        console.error("WebSocketエラー:", err);
     });
-}
-
-// 最初に接続
-connect();
-
-// もし接続が切断された場合に再接続
-socket.addEventListener("close", () => {
-    console.log("接続が切断されたため再接続します...");
-    connect();
 });
+
+console.log(`WebSocket サーバーがポート ${port} で起動しました`);
