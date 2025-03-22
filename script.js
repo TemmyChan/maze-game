@@ -51,8 +51,8 @@ function draw() {
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    Object.values(players).forEach(p => {
-        ctx.fillStyle = p === player ? "blue" : "red";
+    Object.entries(players).forEach(([id, p]) => {
+        ctx.fillStyle = id === playerId ? "blue" : "red"; // 自分のIDなら青、それ以外は赤
         ctx.fillRect(p.x * 20, p.y * 20, 20, 20);
     });
 }
